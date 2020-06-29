@@ -1,0 +1,33 @@
+Reading NetCDF4 Data in Python
+October 3, 2017 by Utpal Rai
+
+https://iescoders.com/reading-netcdf4-data-in-python/
+
+Reading NetCDF data, Accessing the Remote Data via openDAP, Dealing with the Missing Data, Dealing with Dates and Times, Simple Multi-file Aggregation
+
+
+How to read netcdf file in Python
+https://www.afahadabdullah.com/blog/how-to-read-netcdf-file-in-python
+
+
+Python - NetCDF reading and writing example with plotting
+Chris Slocum
+http://schubert.atmos.colostate.edu/~cslocum/netcdf_example.html
+
+
+netCDF4 module
+https://unidata.github.io/netcdf4-python/netCDF4/index.html
+
+
+Extended Reconstructed Sea Surface Temperature (ERSST) v5
+https://www.ncdc.noaa.gov/data-access/marineocean-data/extended-reconstructed-sea-surface-temperature-ersst-v5
+
+
+Challenge #84: Map Hurricane Harvey's Storm Evolution
+https://community.alteryx.com/t5/Weekly-Challenge/Challenge-84-Map-Hurricane-Harvey-s-Storm-Evolution/td-p/79533
+
+
+Sea Surface Temperature, Multi-Satellite AVHRR, U.S. East Coast 1km, Level 3, 2008-present, 3-Day
+https://coastwatch.noaa.gov/erddap/griddap/noaacwecnAVHRRmultisatsstEastCoast3Day.html
+
+
