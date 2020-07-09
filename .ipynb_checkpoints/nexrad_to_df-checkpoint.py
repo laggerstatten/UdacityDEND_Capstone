@@ -28,6 +28,16 @@ volume_start = datetime.strptime(radar.time['units'][14:34], '%Y-%m-%dT%H:%M:%SZ
 
 station_row.extend([station_name, product, pattern, latitude0, longitude0, altitude0, volume_start] )
 
+stations = pd.DataFrame(
+    {'StationName': station_name, 
+     'Product': product, 
+     'Pattern': pattern, 
+     'Latitude': latitude0,
+     'Longitude': longitude0,
+     'Altitude': altitude0,
+     'StartTime': volume_start     
+    })
+
 ### build initial samples table
 merged_lat = list(itertools.chain.from_iterable(radar.gate_latitude['data']))
 merged_lon = list(itertools.chain.from_iterable(radar.gate_longitude['data']))
