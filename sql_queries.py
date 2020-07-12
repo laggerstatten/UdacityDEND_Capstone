@@ -2,7 +2,7 @@ hurdat_table_createquery = """
     SELECT          StormIdentifier  AS storm_id, 
                     StormName AS storm_name, 
                     StormSamples AS sample_count, 
-                    Tdatetime AS datetime, 
+                    Datetime AS datetime, 
                     S2CellID AS s2_cell_id,
                     S2Region AS s2_region,
                     RecordIdentifier AS record_id,
@@ -69,8 +69,8 @@ nexrad_table_createquery = """
 nexrad_table_check1_query = """
     SELECT  COUNT(*)
     FROM nexrad_table_DF
-    WHERE   latitude IS NULL OR latitude == "" OR
-            longitude IS NULL OR longitude == ""
+    WHERE   GateLat IS NULL OR GateLat == "" OR
+            GateLon IS NULL OR GateLon == ""
 """
 
 # Check that table has > 0 rows

@@ -1,22 +1,13 @@
 import numpy as np
+import numpy.ma
 import pandas as pd
 import itertools
 import pyart
-#from sphere import LatLng, CellId
 from datetime import datetime, timedelta
+from pyspark.sql import types as t
 
-#import pandas as pd
-#import re
-#import pyspark
-#import findspark
-#import random
-#from pyspark import SparkContext, SparkConf
-#from pyspark.sql import SparkSession
-#from pyspark.sql import types as t
-#from datetime import datetime, timedelta
-
-from sql_queries import *
-from all_etl import *
+from sql_queries import nexrad_table_check1_query, nexrad_table_check2_query
+from all_etl import parsell, parsedt, parquet_wr
 
 
 ### ----- ----- ----- ----- ----- ###
@@ -57,6 +48,19 @@ def process_nexrad_data(spark, path_d):
         })
 
     ### build initial samples table
+    
+    ## move masks to variables
+    rmask = nexrad_df.fields['reflectivity']['data'].mask
+    vmask = nexrad_df.fields['velocity']['data'].mask
+    
+    ## assign nan to masked values - NOT using filled method -- filled() not persistant after mask removal
+    (nexrad_df.fields['reflectivity']['data'])[rmask] = np.nan
+    (nexrad_df.fields['velocity']['data'])[vmask] = np.nan
+    
+    ### remove mask from masked arrays
+    nexrad_df.fields['reflectivity']['data'].mask = numpy.ma.nomask
+    nexrad_df.fields['velocity']['data'].mask = numpy.ma.nomask
+    
     merged_lat = list(itertools.chain.from_iterable(nexrad_df.gate_latitude['data']))
     merged_lon = list(itertools.chain.from_iterable(nexrad_df.gate_longitude['data']))
     merged_alt = list(itertools.chain.from_iterable(nexrad_df.gate_altitude['data']))
@@ -74,6 +78,16 @@ def process_nexrad_data(spark, path_d):
          'Velocity': merged_velo
         })    
     
+    # filter out rows without reflectivity or velocity measurements, heap space error when reading all 11M rows
+    
+    filter = 1
+    
+    if filter == 1:
+        nexrad_sample_df = nexrad_sample_df[ ( (nexrad_sample_df['Reflectivity'] >= -32) & (nexrad_sample_df['Reflectivity'] <= 94.5) ) | ( (nexrad_sample_df['Velocity'] >= -95) & (nexrad_sample_df['Velocity'] <= 95) ) ].copy()
+    else: 
+        nexrad_sample_df = nexrad_sample_df
+    
+    #nexrad_sample_df = nexrad_sample_df[(nexrad_sample_df['Reflectivity'] == -8)].copy()
     
     # --------------------------------------------------------
     # Read data to Spark
@@ -152,7 +166,7 @@ def process_joined_hurdat_data( spark, path_d, hurdat_storms_df_spark, hurdat_tr
 ### ----- ----- ----- ----- ----- ###
 ### check NEXRAD data quality (nulls, row count)
 
-def check_data_quality( spark, nexrad_table):
+def check_nexrad_data_quality( spark, nexrad_table):
     """
     Check data quality for NEXRAD table
     """

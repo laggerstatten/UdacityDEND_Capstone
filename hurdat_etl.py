@@ -1,17 +1,10 @@
 import pandas as pd
-import re
-import pyspark
-import findspark
-import random
-from pyspark import SparkContext, SparkConf
-from pyspark.sql import SparkSession
 from pyspark.sql import types as t
-from pyspark.sql.functions import to_date, to_timestamp
-from datetime import datetime, timedelta
-from sphere import RegionCoverer, Cell, LatLng, LatLngRect, CellId
+from pyspark.sql.functions import to_timestamp
+from sphere import CellId, LatLng
 
-from sql_queries import *
-from all_etl import *
+from sql_queries import hurdat_table_createquery, hurdattime_table_createquery, hurdat_table_check1_query, hurdat_table_check2_query
+from all_etl import parsell, parsedt, parquet_wr
 
 ### ----- ----- ----- ----- ----- ###
 ### Initial processing and loading for HURDAT data
@@ -83,18 +76,15 @@ def process_hurdat_data(spark, path_d):
     Tlongitude = [parsell(lon) for lon in hurdat_tracks_df['Longitude']]
     hurdat_tracks_df['Longitude'] = Tlongitude 
     
-    
-    
     s2level = 10
     hurdat_tracks_df['S2LL'] = [LatLng.from_degrees(x, y) for x, y in zip(hurdat_tracks_df['Latitude'], hurdat_tracks_df['Longitude'])]
     hurdat_tracks_df['S2CellID'] = [CellId().from_lat_lng(xy) for xy in hurdat_tracks_df['S2LL']]
     hurdat_tracks_df['S2Region'] = [z.parent(s2level) for z in hurdat_tracks_df['S2CellID']]
     
     
-    
     #fix datetime in tracks table
     Tdatetime = [parsedt(date, time) for date, time in zip(hurdat_tracks_df['Date'],hurdat_tracks_df['Time'])]
-    hurdat_tracks_df['Tdatetime'] = Tdatetime  
+    hurdat_tracks_df['Datetime'] = Tdatetime  
     
     
     # --------------------------------------------------------
@@ -134,7 +124,7 @@ def process_hurdat_data(spark, path_d):
                                 t.StructField("S2LL", t.StringType(), False),
                                 t.StructField("S2CellID", t.StringType(), False),        
                                 t.StructField("S2Region", t.StringType(), False),        
-                                t.StructField('Tdatetime', t.DateType(), False)
+                                t.StructField('Datetime', t.DateType(), False)
                                 ])
 
     hurdat_storms_df_spark = spark.createDataFrame(hurdat_storms_df, schema=hurdat_storm_schema)
@@ -148,26 +138,6 @@ def process_hurdat_data(spark, path_d):
     print("HURDAT processing complete")
 
     return hurdat_storms_df_spark, hurdat_tracks_df_spark, hurdat_tracks_df
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -212,7 +182,7 @@ def process_hurdat_time_data( spark, path_d, hurdat_tracks_df_spark):
     """
     print("Creating table")
 
-    hurdat_tracks_df_spark = hurdat_tracks_df_spark.withColumn("dt", to_timestamp(hurdat_tracks_df_spark.Tdatetime))
+    hurdat_tracks_df_spark = hurdat_tracks_df_spark.withColumn("dt", to_timestamp(hurdat_tracks_df_spark.Datetime))
 
     hurdat_tracks_df_spark.createOrReplaceTempView("time_table_DF")
 
@@ -247,19 +217,8 @@ def process_hurdat_space_data( spark, path_d, hurdat_tracks_df):
         colname = 'S2_L' + str(s2level).zfill(2)
         #space_table[colname] = [z.parent(s2level) for z in space_table['S2CellID']]   
         space_table[colname] = [str(z.parent(s2level)) for z in space_table['S2CellID']]       
-    """
-    hurdat_space_schema = t.StructType([
-                                t.StructField("S2CellID", t.StringType(), False),        
-                                t.StructField("S2Region", t.StringType(), False),        
-                                ])
-
-    hurdat_space_df_spark = spark.createDataFrame(space_table, schema=hurdat_space_schema)
-    """
-
 
     hurdat_space_df_spark = spark.createDataFrame(space_table)
-
-
 
     print("HURDAT Space schema:")
     hurdat_space_df_spark.printSchema()
@@ -274,7 +233,7 @@ def process_hurdat_space_data( spark, path_d, hurdat_tracks_df):
 ### ----- ----- ----- ----- ----- ###
 ### check HURDAT data quality (nulls, row count)
 
-def check_data_quality( spark, hurdat_table):
+def check_hurdat_data_quality( spark, hurdat_table):
     """
     Check data quality for HURDAT table
     """
