@@ -2,7 +2,7 @@
 ### Data Engineering Capstone Project
 
 #### Project Summary
---describe your project at a high level--
+> This project combines two datasets describing climate/weather data useful for understanding hurricanes and tropical storms. The HURDAT2 dataset describes tropical storm strength and location since the 1800s. The NEXRAD Dopplar Radar is the radar map across the United States, updated multiple times an hour. In this project, these datasets are spatially and temporally indexed, to create a backend for a tropical weather modeling application. If a frontend were developed, a user could specify a time and space window, and the database could retrieve records within that window.
 
 The project follows the follow steps:
 * Step 1: Scope the Project and Gather Data
@@ -10,7 +10,6 @@ The project follows the follow steps:
 * Step 3: Define the Data Model
 * Step 4: Run ETL to Model the Data
 * Step 5: Complete Project Write Up
-
 
 
 ### Step 1: Scope the Project and Gather Data
@@ -77,10 +76,6 @@ NEXRAD
 * Masked values are filtered out to reduce number of rows loaded.
 * NEXRAD scan start time is extracted from text, converted to datetime, and applied to time deltas for each record.
 
-
-* converted lat / lon to S2 cell -- not a cleaning task
-
-
    
 ### Step 3: Define the Data Model
 #### 3.1 Conceptual Data Model
@@ -107,15 +102,16 @@ Broad outline:
 2. verify Spark can run in environment
 3. define paths to input data
 4. create Spark session
-5. process input files, store data as parquet files, output is storms dataframe, tracks dataframe
+5. process HURDAT input files, store data as parquet files, output is storms dataframe, tracks dataframe
 6. join resulting dataframes, store data as parquet files, output is joined table
 7. perform data QC checks on table
-
+8. process NEXRAD input files, store data as parquet files, output is stations dataframe, samples dataframe
+9. perform data QC checks on table
 
 ### Step 4: Run Pipelines to Model the Data 
 #### 4.1 Create the data model
 *Build the data pipelines to create the data model.*
-
+> The data pipeline for this process esists across the following files: etl.py, all_etl.py, hurdat_etl.py, nexrad_etl.py.
 
 
 
@@ -125,6 +121,9 @@ Broad outline:
  * *Unit tests for the scripts to ensure they are doing the right thing*
  * *Source/Count checks to ensure completeness*
  
+> Each table test follows the same pattern. The method creates temp view of joined table, and imports SQL queries for testing data quality. The table is checked for NULL values in critical fields, and the number of rows in the table is counted. If either of these tests fails the criteria (greater than 0 NULL values or less that 1 records), that test receives a boolean flag. An any statement then tests if any flags are raised. This process allows for the easy introduction of more tests later. The method then returns the counts.
+
+
 *Run Quality Checks*
 
 
@@ -144,27 +143,19 @@ Broad outline:
 
 
 * *Propose how often the data should be updated and why.*
-> answer here
+> HURDAT data is only updated during an active tropical storm. However, since the dataset is relatively small, it could easily be updated daily (or hourly during hurricane season), with little performance decline. The NEXRAD dataset is much larger, as thousands of files are generated daily, each with millions of records. Since this database is intended for use as backend for hurricane modeling, rather than a live hurricane detection system, the data does not need to be up to the minute. It could even be as old as the last hurricane season. This data could be updated every year at the end of the hurricane season. To level out performance, monthly or daily loads would also work.
 
 
 * *Write a description of how you would approach the problem differently under the following scenarios:*
+
  * *The data was increased by 100x.*
 > This project only reads a single NEXRAD file. In reality, there are over 150 NEXRAD stations, and each produces 140 to 290 files per day. If this pipeline were used to actually process that much data, it should be moved to a cloud environment rather than local installation. Clustered Spark could be used for parallel processing.
+
  * *The data populates a dashboard that must be updated on a daily basis by 7am every day.*
 > NEXRAD files are continuously produced during the day, so they should be processed as soon as they are available in order to level out processor demand during the day. After processing the data should be stored in a cloud database for easy access. The spatial and temporal indexing of the data allows for easier data retrieval.
+
  * *The database needed to be accessed by 100+ people.*
 > The storage and ETL pipeline should be moved from the local environment to a cloud environment. Each user should define a spatial and temporal window for the data they wish to access. This way the data can be partitioned in an efficient manner, placing data with spatial/temporal index within that window closest to that user.
-
-
-
-
-
-
-
-
-
-
-
 
 
 

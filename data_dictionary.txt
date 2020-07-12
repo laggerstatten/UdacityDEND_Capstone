@@ -1,0 +1,58 @@
+Common:
+
+spatial: 
+	lat - latitude in degrees, negative is south
+	lon - longitude in degrees, negative is west
+	S2 cell - S2 cell for given latitude / longitude combination
+	centroid - center of given S2 cell, at lat/lon pair
+	parent cell - parent of S2 cell at level 10
+
+time: 
+	time - time sample was taken
+	datetime heirarchy - standard datetime heirarchy (millisecond, second, minute, hour, date, month, year)
+
+
+
+
+NEXRAD
+
+sample: 
+	station - NEXRAD Dopplar radar station where sample was taken
+	GateLat - latitude in degrees, negative is south
+	GateLon - longitude in degrees, negative is west
+	GateAlt - altitude of sample in meters
+	GateTime - time sample was taken
+	Reflectivity - sample reflectivity on dBZ
+	Velocity  - sample velocity in meters per second
+
+station: 
+	StationName - NEXRAD Dopplar radar station where sample was taken
+	Product - data product produced by radar scan
+	Pattern - operational mode (scan type) for radar scan
+	Latitude - station latitude in degrees, negative is south
+	Longitude - station longitude in degrees, negative is west
+	Altitude - station altitude in meters
+	StartTime - time scan began
+	
+HURDAT
+
+track point: 
+	Date - date of track point
+	Time - time of track point
+	RecordIdentifier - identifier for storm events
+	SystemStatus - type of storm
+	Latitude - latitude in degrees, negative is south
+	Longitude - longitude in degrees, negative is west
+	MaxSustWind - maximum sustained wind, in knots
+	MinPressure - minimum pressure, in millibars                  
+	NE34, SE34, SW34, NW34, NE50, SE50, SW50, NW50, NE64, SE64, SW64, NW64 - 34/50/64 knot wind radius in NE/SE/SW/NW quadrant (size of storm)       
+	Identifier - NOAA code to identify storm
+	Name - name, if storm is a named storm
+	Samples	- number of track points associated with storm
+	
+	
+storm: 
+	StormIdentifier - NOAA code to identify storm
+	StormName - name, if storm is a named storm
+	StormSamples - number of track points associated with storm
+
