@@ -6,6 +6,7 @@ import random
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
+from pyspark.sql.functions import to_date, to_timestamp
 from datetime import datetime, timedelta
 from sphere import RegionCoverer, Cell, LatLng, LatLngRect, CellId
 
@@ -149,15 +150,37 @@ def process_hurdat_data(spark, path_d):
     return hurdat_storms_df_spark, hurdat_tracks_df_spark, hurdat_tracks_df
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### ----- ----- ----- ----- ----- ###
-### process HURDAT Dimension table
+### process HURDAT Fact table
 
 def process_joined_hurdat_data( spark, path_d, hurdat_storms_df_spark, hurdat_tracks_df_spark):
     """
     Load input data
     Join tables
     Write / read the data to / from Spark
-    Store the data as parquet dimension files
+    Store the data as parquet fact files
     """
     print("Creating table")
 
@@ -177,6 +200,76 @@ def process_joined_hurdat_data( spark, path_d, hurdat_storms_df_spark, hurdat_tr
     print("HURDAT table complete")
 
     return hurdat_table
+
+### ----- ----- ----- ----- ----- ###
+### process HURDAT Time Dimension table
+
+def process_hurdat_time_data( spark, path_d, hurdat_tracks_df_spark):
+    """
+    Load input data
+    Write / read the data to / from Spark
+    Store the data as parquet dimension files
+    """
+    print("Creating table")
+
+    hurdat_tracks_df_spark = hurdat_tracks_df_spark.withColumn("dt", to_timestamp(hurdat_tracks_df_spark.Tdatetime))
+
+    hurdat_tracks_df_spark.createOrReplaceTempView("time_table_DF")
+
+    time_table = spark.sql(hurdattime_table_createquery)  
+    
+
+    print("HURDAT Time schema:")
+    time_table.printSchema()
+
+    parquet_wr(spark, path_d["output_data"] + "time_table.parquet", time_table)
+    
+    print("HURDAT Time table complete")
+
+    return time_table
+
+
+
+### ----- ----- ----- ----- ----- ###
+### process HURDAT Space Dimension table
+
+def process_hurdat_space_data( spark, path_d, hurdat_tracks_df):
+    """
+    Load input data
+    Write / read the data to / from Spark
+    Store the data as parquet dimension files
+    """
+    print("Creating table")
+    
+    space_table = hurdat_tracks_df[['S2CellID','S2Region']].copy()
+
+    for s2level in range(29,0,-1):
+        colname = 'S2_L' + str(s2level).zfill(2)
+        #space_table[colname] = [z.parent(s2level) for z in space_table['S2CellID']]   
+        space_table[colname] = [str(z.parent(s2level)) for z in space_table['S2CellID']]       
+    """
+    hurdat_space_schema = t.StructType([
+                                t.StructField("S2CellID", t.StringType(), False),        
+                                t.StructField("S2Region", t.StringType(), False),        
+                                ])
+
+    hurdat_space_df_spark = spark.createDataFrame(space_table, schema=hurdat_space_schema)
+    """
+
+
+    hurdat_space_df_spark = spark.createDataFrame(space_table)
+
+
+
+    print("HURDAT Space schema:")
+    hurdat_space_df_spark.printSchema()
+
+    parquet_wr(spark, path_d["output_data"] + "space_table.parquet", hurdat_space_df_spark)
+    
+    print("HURDAT Space table complete")
+
+    return hurdat_space_df_spark
+
 
 ### ----- ----- ----- ----- ----- ###
 ### check HURDAT data quality (nulls, row count)

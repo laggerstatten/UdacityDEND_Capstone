@@ -6,6 +6,7 @@ import random
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
+from pyspark.sql.functions import to_date, to_timestamp
 from datetime import datetime, timedelta
 
 from sql_queries import *

@@ -26,6 +26,15 @@ hurdat_table_createquery = """
     FROM hurdat_table_DF             AS hurdat
 """
 
+hurdattime_table_createquery = """
+    SELECT DISTINCT  dt             AS datetime, 
+                     year(dt)       AS year,
+                     month(dt)      AS month,
+                     day(dt)        AS day, 
+                     hour(dt)       AS hour,                      
+                     minute(dt)     AS minute
+    FROM time_table_DF
+"""
 
 # Check that key fields have valid values (no nulls or empty)
 hurdat_table_check1_query = """
