@@ -3,6 +3,8 @@ hurdat_table_createquery = """
                     StormName AS storm_name, 
                     StormSamples AS sample_count, 
                     Tdatetime AS datetime, 
+                    S2CellID AS s2_cell_id,
+                    S2Region AS s2_region,
                     RecordIdentifier AS record_id,
                     SystemStatus AS system_status, 
                     Latitude AS latitude, 

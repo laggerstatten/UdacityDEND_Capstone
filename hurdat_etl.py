@@ -7,6 +7,7 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
 from datetime import datetime, timedelta
+from sphere import RegionCoverer, Cell, LatLng, LatLngRect, CellId
 
 from sql_queries import *
 from all_etl import *
@@ -74,11 +75,21 @@ def process_hurdat_data(spark, path_d):
     hurdat_tracks_df = hurdat_df[hurdat_df['IsStormHdr'] == False].copy()  
     
     
+    # spatial processing
     Tlatitude = [parsell(lat) for lat in hurdat_tracks_df['Latitude']]
     hurdat_tracks_df['Latitude'] = Tlatitude
 
     Tlongitude = [parsell(lon) for lon in hurdat_tracks_df['Longitude']]
     hurdat_tracks_df['Longitude'] = Tlongitude 
+    
+    
+    
+    s2level = 10
+    hurdat_tracks_df['S2LL'] = [LatLng.from_degrees(x, y) for x, y in zip(hurdat_tracks_df['Latitude'], hurdat_tracks_df['Longitude'])]
+    hurdat_tracks_df['S2CellID'] = [CellId().from_lat_lng(xy) for xy in hurdat_tracks_df['S2LL']]
+    hurdat_tracks_df['S2Region'] = [z.parent(s2level) for z in hurdat_tracks_df['S2CellID']]
+    
+    
     
     #fix datetime in tracks table
     Tdatetime = [parsedt(date, time) for date, time in zip(hurdat_tracks_df['Date'],hurdat_tracks_df['Time'])]
@@ -119,6 +130,9 @@ def process_hurdat_data(spark, path_d):
                                 t.StructField("Identifier", t.StringType(), False),
                                 t.StructField("Name", t.StringType(), False),
                                 t.StructField("Samples", t.StringType(), False),
+                                t.StructField("S2LL", t.StringType(), False),
+                                t.StructField("S2CellID", t.StringType(), False),        
+                                t.StructField("S2Region", t.StringType(), False),        
                                 t.StructField('Tdatetime', t.DateType(), False)
                                 ])
 
@@ -132,7 +146,7 @@ def process_hurdat_data(spark, path_d):
     
     print("HURDAT processing complete")
 
-    return hurdat_storms_df_spark, hurdat_tracks_df_spark
+    return hurdat_storms_df_spark, hurdat_tracks_df_spark, hurdat_tracks_df
 
 
 ### ----- ----- ----- ----- ----- ###
